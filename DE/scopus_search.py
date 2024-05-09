@@ -47,7 +47,7 @@ def search_scopus(year):
 
     return json.dumps(results)
 
-if __name__ == "__main__":
+def scopus_search():
     cur_path = os.path.dirname(os.path.realpath(__file__))
     for year in range(2018, 2024):
         folder_path = os.path.join(cur_path, "data")

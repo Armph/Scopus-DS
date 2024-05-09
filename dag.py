@@ -1,8 +1,9 @@
 from airflow import DAG
 from airflow.operators.bash_operator import BashOperator
 from airflow.operators.python_operator import PythonOperator
-from airflow.contrib.operators.spark_submit_operator import SparkSubmitOperator
+from airflow.providers.apache.spark.operators.spark_submit import SparkSubmitOperator
 from datetime import datetime
+from DE.scopus_search import scopus_search
 
 default_args = {
     'owner': 'airflow',
@@ -17,9 +18,9 @@ dag = DAG(
     schedule_interval='@daily',
 )
 
-collect_data = BashOperator(
-    task_id='collect_data',
-    bash_command='python /DE/scopus_search.py',
+collect_data = PythonOperator(
+    task_id='scopus_search',
+    python_callable=scopus_search,
     dag=dag,
 )
 
@@ -27,5 +28,12 @@ preprocess_data = SparkSubmitOperator(
     task_id='preprocess_data',
     conn_id='spark_default',
     application='/DE/spark.py',
+    total_executor_cores=1,
+    executor_cores=1,
+    executor_memory='2g',
+    num_executors=1,
+    driver_memory='2g',
     dag=dag,
 )
+
+collect_data >> preprocess_data
