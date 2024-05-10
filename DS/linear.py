@@ -10,10 +10,9 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 def get_data():
     # nltk.download('punkt')
 
-    df = pd.read_csv('DE/processed_data/part-00000-f7688640-2e6f-4ec8-a25f-798303556273-c000.csv')
+    df = pd.read_csv('airflow/dags/resource.csv')
 
     df = df.drop('eid', axis=1)
-    #df = df.drop('author_keywords', axis=1)
 
     df_encoded = pd.get_dummies(df[['sub_type', 'subject_areas']])
 
@@ -32,12 +31,12 @@ def get_data():
 
     df = df.drop('author_keywords', axis=1)
 
-    # df.to_csv('DS/processed_data.csv', index=False)
+    df.to_csv('airflow/dags/processed.csv', index=False)
 
     return df
 
 def train():
-    df = pd.read_csv('DS/processed_data.csv')
+    df = pd.read_csv('airflow/dags/processed.csv')
     X = df.drop('refcount', axis=1)
     y = df['refcount']
 
@@ -58,19 +57,19 @@ def train():
 
     rf = grid_search.best_estimator_
 
-    joblib.dump(rf, 'DS/model.pkl')
+    joblib.dump(rf, 'airflow/dags/DS/model.pkl')
 
     return
 
 def predict():
-    model = joblib.load('DS/model.pkl')
+    model = joblib.load('airflow/dags/DS/model.pkl')
     df = get_data()
 
     df.drop(['refcount'], axis=1, inplace=True)
 
     y_pred = model.predict(df)
 
-    df = pd.read_csv('DE/processed_data/part-00000-f7688640-2e6f-4ec8-a25f-798303556273-c000.csv')
+    df = pd.read_csv('airflow/dags/resource.csv')
 
     df['refcount'] = y_pred
 
@@ -80,11 +79,11 @@ def predict():
 
     df = df.groupby(['publication_year', 'subject_areas']).mean().reset_index()
 
-    df.to_csv('DS/predictions.csv', index=False)
+    df.to_csv('airflow/dags/predictions.csv', index=False)
 
     return
 
-if __name__ == '__main__':
-    # get_data()
-    # train()
+def analyze_data():
+    get_data()
+    train()
     predict()

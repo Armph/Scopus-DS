@@ -7,7 +7,7 @@ def merge_data():
     spark = SparkSession.builder.appName("Data Processing").getOrCreate()
 
     # Load data
-    df = spark.read.json("DE/data/*.json")
+    df = spark.read.json("airflow/dags/DE/data/*.json")
 
     # Filter data
     df = df.dropna()
@@ -22,7 +22,7 @@ def merge_data():
     # df.show()
     # ------------------------------------------------------------------------------ #
 
-    df2 = spark.read.csv("DE/source_data/*.csv", header=True)
+    df2 = spark.read.csv("airflow/dags/DE/source_data/*.csv", header=True)
 
     df2 = df2.dropna()
 
@@ -37,15 +37,14 @@ def merge_data():
     # Union data
     prep = df.union(df2)
 
+    # Remove rows with publication_year < 2018
+    prep = prep.filter(prep.publication_year >= 2018)
+
     # prep.printSchema()
     # prep.show()
     # print(prep.count())
 
-    prep.coalesce(1) \
-        .write.format("com.databricks.spark.csv") \
-        .option("header", "true") \
-        .mode("overwrite") \
-        .save("DE/processed_data")
+    prep.toPandas().to_csv("airflow/dags/resource.csv", index=False)
 
     spark.stop()
     return
@@ -53,21 +52,17 @@ def merge_data():
 def group_data():
     spark = SparkSession.builder.appName("Data Processing").getOrCreate()
 
-    df = spark.read.csv("DE/processed_data/*.csv", header=True)
+    df = spark.read.csv("airflow/dags/resource.csv", header=True)
 
     df = df.groupBy("publication_year", "subject_areas") \
         .count() \
         .orderBy("publication_year")
 
-    df.coalesce(1) \
-        .write.format("com.databricks.spark.csv") \
-        .option("header", "true") \
-        .mode("overwrite") \
-        .save("DE/grouped_data")
+    df.toPandas().to_csv("airflow/dags/groupByYear.csv", index=False)
 
     spark.stop()
     return
 
-if __name__ == "__main__":
+def spark_submit():
     merge_data()
     group_data()

@@ -11,7 +11,7 @@ def search_scopus(year):
 
     results = []
 
-    for doc in tqdm(search.results[:200], desc="Year: {}".format(year)):
+    for doc in tqdm(search.results[:600], desc="Year: {}".format(year)):
         try:
             doc_dict = doc._asdict()
             eid = doc_dict["eid"]
@@ -49,7 +49,7 @@ def search_scopus(year):
 
 def scopus_search():
     cur_path = os.path.dirname(os.path.realpath(__file__))
-    for year in range(2018, 2024):
+    for year in range(2023, 2025):
         folder_path = os.path.join(cur_path, "data")
         if not os.path.exists(folder_path):
             os.makedirs(folder_path)
@@ -58,5 +58,3 @@ def scopus_search():
 
         with open(os.path.join(folder_path, "{}.json".format(year)), "w") as f:
             f.write(data)
-
-# Path: DE/scopus_search.py
